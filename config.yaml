@@ -1,0 +1,49 @@
+# config.yaml
+
+# -----------------------------
+# Model Configuration
+# -----------------------------
+model:
+  path: "yolo11s.pt"                 # Path to the YOLO model weights file
+  detection_threshold: 0.45          # Confidence threshold for object detections (0.0 - 1.0)
+  tracking_threshold: 0.8            # IoU threshold for tracking (0.0 - 1.0)
+  tracker: "botsort.yaml"            # Tracker configuration file ("bytetrack.yaml" or "botsort.yaml")
+
+# -----------------------------
+# Path and Crossing Configuration
+# -----------------------------
+path:
+  max_length: 30                     # Maximum number of points to keep in each object's tracking path
+  min_points_for_crossing: 3         # Minimum number of points required to validate a path for crossing detection
+
+# -----------------------------
+# Frame Processing Configuration
+# -----------------------------
+frame_processing:
+  frame_skip: 7                      # Process every Nth frame to improve processing speed
+  roi_padding: 150                   # Padding in pixels around the counting line to define the Region of Interest (ROI)
+
+# -----------------------------
+# Class Mapping Configuration
+# -----------------------------
+classes:
+  mapping:
+    0: "person"                      # YOLO class ID 0 mapped to "person"
+    2: "car"                          # YOLO class ID 2 mapped to "car"
+    7: "truck"                        # YOLO class ID 7 mapped to "truck"
+
+# -----------------------------
+# Output Configuration
+# -----------------------------
+output:
+  save_csv: true                     # Whether to save the crossing events to a CSV file
+  csv_path: "crossings.csv"          # Path to save the CSV file with crossing events
+  save_video: true                   # Whether to save the output video with annotations
+  video_path: "output.mp4"           # Path to save the annotated output video
+
+# -----------------------------
+# Logging Configuration
+# -----------------------------
+logging:
+  level: "INFO"                       # Logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  file: "traffic_counter.log"         # Path to save the log file
