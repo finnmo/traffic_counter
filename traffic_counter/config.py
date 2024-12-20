@@ -45,4 +45,12 @@ def load_config(config_path: str) -> dict:
     """
     with open(config_path, 'r') as file:
         config = yaml.safe_load(file)
+        
+        # Set default start_time if not provided
+    if 'time' not in config or 'start_time' not in config['time']:
+        config['time'] = config.get('time', {})
+        config['time']['start_time'] = "00:00"
+        
+        
     return config
+

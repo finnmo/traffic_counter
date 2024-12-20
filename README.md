@@ -61,7 +61,7 @@ It's recommended to use a virtual environment to manage dependencies and avoid c
 1. **Create a Virtual Environment:**
 
    ```bash
-   python3 -m venv env
+   python -m venv env
    ```
 
    This command creates a virtual environment named `env` in your project directory.
@@ -157,6 +157,11 @@ Before running the application, configure its settings via the `config.yaml` fil
        0: "person"                       # YOLO class ID 0 mapped to "person"
        2: "car"                          # YOLO class ID 2 mapped to "car"
        7: "truck"                        # YOLO class ID 7 mapped to "truck"
+   # -----------------------------
+   # Time Configuration
+   # -----------------------------
+   time:
+     start_time: "15:34"  # Optional. Format: "HH:MM" (24-hour format). Defaults to "00:00" if not specified.
 
    # -----------------------------
    # Output Configuration

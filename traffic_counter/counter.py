@@ -56,11 +56,10 @@ class Direction:
 @dataclass
 class CrossingEvent:
     """Represents a crossing event"""
-    timestamp: datetime.datetime
-    object_id: int
+    relative_time: float  # Time in seconds relative to video start
     object_class: str
     direction: str
-    confidence: float
+    count: int
 
 class TrafficCounter:
     def __init__(
@@ -73,7 +72,9 @@ class TrafficCounter:
         min_points_for_path: int = 3,
         frame_skip: int = 3,
         roi_padding: int = 200,
-        class_mapping: Dict[int, str] = None
+        class_mapping: Dict[int, str] = None,
+        fps: float = 30.0,  # Add fps parameter
+        start_time: str = "00:00"  # Add start_time parameter
     ):
         """
         Initialize the TrafficCounter with configuration parameters.
@@ -107,8 +108,8 @@ class TrafficCounter:
         self.model = YOLO(model_path).to(self.device)
         # Enable half precision if using CUDA
         if self.device == 'cuda':
-            self.model.model.half()
-            logger.info("Using half precision (FP16) for CUDA.")
+            # self.model.model.half()  # Removed to prevent dtype mismatch
+            logger.info("Using CUDA for inference without manual half precision.")
 
         self.model.overrides['batch'] = 1
         self.count_line: Optional[CountLine] = None
@@ -123,6 +124,8 @@ class TrafficCounter:
         self.frame_skip = frame_skip        # Store the parameter
         self.roi_padding = roi_padding      # Store the parameter
         self.counted_tracks = set()
+        self.fps = fps
+        self.start_time_seconds = self._parse_start_time(start_time)
 
         # Enhanced tracking settings for YOLO
         self.model.overrides['conf'] = detection_threshold  # Detection confidence threshold
@@ -143,6 +146,7 @@ class TrafficCounter:
         }
 
         self.frame_count = 0  # Initialize frame_count here
+
     def _is_valid_crossing(
         self,
         previous: Tuple[float, float],
@@ -153,27 +157,27 @@ class TrafficCounter:
         dx = current[0] - previous[0]
         dy = current[1] - previous[1]
         distance = np.sqrt(dx*dx + dy*dy)
-        
+
         if distance < min_distance:
             return False
-            
+
         if not self.count_line:
             return False
-            
+
         line_dx = self.count_line.end[0] - self.count_line.start[0]
         line_dy = self.count_line.end[1] - self.count_line.start[1]
         line_length = np.sqrt(line_dx*line_dx + line_dy*line_dy)
-        
+
         dot_product = (dx*line_dx + dy*line_dy) / (distance * line_length)
         angle = np.abs(np.arccos(dot_product))
-        
+
         return 0.785 <= angle <= 2.356  # 45 to 135 degrees in radians
 
     def _update_path(self, track_id: int, center: Tuple[float, float]) -> None:
         """Update the path for a given track"""
         if track_id not in self.paths:
             self.paths[track_id] = []
-        
+
         self.paths[track_id].append(center)
         if len(self.paths[track_id]) > self.max_path_length:
             self.paths[track_id].pop(0)
@@ -185,29 +189,29 @@ class TrafficCounter:
         """
         if not self.count_line or len(path) < self.min_points_for_path:
             return False, ""
-            
+
         a, b, c = self.count_line.get_line_equation()
-        
+
         # Calculate signs for all points in the path
         signs = [np.sign(a * x + b * y + c) for x, y in path]
-        
+
         # Look for sign changes in consecutive points
         for i in range(len(signs) - 1):
             if signs[i] != signs[i + 1]:
                 # Get the points where crossing occurred
                 p1, p2 = path[i], path[i + 1]
-                
+
                 # Calculate movement direction
                 dx = self.count_line.end[0] - self.count_line.start[0]
                 dy = self.count_line.end[1] - self.count_line.start[1]
-                
+
                 movement_dx = p2[0] - p1[0]
                 movement_dy = p2[1] - p1[1]
-                
+
                 cross_product = dx * movement_dy - dy * movement_dx
-                
+
                 return True, Direction.INBOUND if cross_product > 0 else Direction.OUTBOUND
-                
+
         return False, ""
 
     def _determine_direction(
@@ -220,6 +224,15 @@ class TrafficCounter:
         crossed, direction = self._check_path_crossing(self.paths[track_id])
         return direction if crossed else ""
 
+    def _parse_start_time(self, start_time: str) -> float:
+        """Parse start time string into seconds."""
+        try:
+            hours, minutes = map(int, start_time.split(":"))
+            return hours * 3600 + minutes * 60
+        except ValueError:
+            logger.warning(f"Invalid start_time format '{start_time}'. Defaulting to 0 seconds.")
+            return 0.0
+        
     def _preprocess_frame(self, frame: np.ndarray) -> np.ndarray:
         """
         Preprocess frame for better detection quality while maintaining brightness
@@ -232,33 +245,33 @@ class TrafficCounter:
             new_width = int(width * scale)
             new_height = int(height * scale)
             frame = cv2.resize(frame, (new_width, new_height), interpolation=cv2.INTER_AREA)
-        
+
         # Enhanced preprocessing pipeline
         # 1. Denoise
         #frame = cv2.fastNlMeansDenoisingColored(frame, None, 10, 10, 7, 21)
-        
+
         # 2. Adjust contrast and brightness
         alpha = 1.1  # Contrast control (1.0-3.0)
         beta = 5    # Brightness control (0-100)
         #frame = cv2.convertScaleAbs(frame, alpha=alpha, beta=beta)
-        
+
         # 3. Sharpen
         #kernel = np.array([[-1,-1,-1], 
         #                 [-1, 9,-1],
         #                 [-1,-1,-1]])
         #frame = cv2.filter2D(frame, -1, kernel)
-        
+
         return frame
 
     def process_frame(self, frame: np.ndarray, status_text: str = "") -> np.ndarray:
         """
         Process a single frame with YOLO tracking, count line crossings once per track,
         and restrict detection to a region of interest (ROI) around the line.
-        
+
         Args:
             frame: The current video frame (BGR)
             status_text: Optional text to display (e.g., FPS, progress)
-        
+
         Returns:
             Processed frame (with counts, line, bounding boxes, paths, and status text drawn)
         """
@@ -290,9 +303,9 @@ class TrafficCounter:
         # Crop ROI
         roi_frame = frame[y_min:y_max, x_min:x_max]
 
-        # Convert to half precision if using CUDA
-        if self.device == 'cuda':
-            roi_frame = roi_frame.astype(np.float16)
+        # **Remove Manual Half Precision Conversion**
+        # if self.device == 'cuda':
+        #     roi_frame = roi_frame.astype(np.float16)
 
         # Run YOLO tracking on ROI only
         results = self.model.track(
@@ -324,7 +337,7 @@ class TrafficCounter:
             for box, track_id, class_id, conf in zip(boxes, track_ids, classes, confidences):
                 if class_id not in self.class_mapping:
                     continue
-                
+
                 # XYWH format in ROI coordinates: convert to full frame coordinates
                 x_center, y_center, w, h = box
                 x_center_full = x_center + x_min
@@ -346,13 +359,19 @@ class TrafficCounter:
                         object_class = self.class_mapping[class_id]
                         self.counts[object_class][direction] += 1
                         
+                        # Calculate relative time
+                        relative_time = (self.frame_count / self.fps) + self.start_time_seconds
+                        # Round to two decimal places
+                        relative_time = round(relative_time, 2)
+    
+                        # Append to crossings with relative time
                         event = CrossingEvent(
-                            timestamp=datetime.datetime.now(),
-                            object_id=track_id,
+                            relative_time=relative_time,
                             object_class=object_class,
                             direction=direction,
-                            confidence=conf
+                            count=self.counts[object_class][direction]
                         )
+                        
                         self.crossings.append(event)
 
                         # Mark this track as counted
@@ -360,7 +379,7 @@ class TrafficCounter:
 
                 # Update tracking with current center
                 self.previous_centers[track_id] = current_center
-                
+
                 # Convert xywh (center) to bounding box in full frame coordinates
                 x1 = int(x_center_full - w / 2)
                 y1 = int(y_center_full - h / 2)
@@ -368,7 +387,7 @@ class TrafficCounter:
                 y2 = int(y_center_full + h / 2)
 
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                
+
                 # Draw label
                 label = f"{self.class_mapping[class_id]} {conf:.2f}"
                 # Black outline
@@ -409,14 +428,14 @@ class TrafficCounter:
                         (10, frame_h - 20),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6,
                         (0, 255, 0), 2)
-            
+
         return frame
 
     def draw_line(self, frame: np.ndarray) -> None:
         """Allow user to draw counting line on frame"""
         points = []
         original_size = (frame.shape[1], frame.shape[0])
-        
+
         def mouse_callback(event, x, y, flags, param):
             if event == cv2.EVENT_LBUTTONDOWN:
                 points.append((x, y))
@@ -435,13 +454,13 @@ class TrafficCounter:
             display_frame = frame.copy()
             if len(points) == 1:
                 cv2.circle(display_frame, points[0], 5, (0, 255, 0), -1)
-            
+
             cv2.imshow("Draw Line", display_frame)
             key = cv2.waitKey(1)
-            
+
             if key == 27 or self.count_line:  # ESC key or line drawn
                 break
-        
+
         cv2.destroyAllWindows()
 
     def save_results(self, output_path: str) -> None:
@@ -449,7 +468,23 @@ class TrafficCounter:
         if not self.crossings:
             logger.warning("No crossing events to save")
             return
-            
+        
+        # Prepare data for DataFrame
+        data = []
+        for event in self.crossings:
+            # Convert relative_time (seconds) to "HH:MM:SS.SS" format
+            hours = int(event.relative_time // 3600)
+            minutes = int((event.relative_time % 3600) // 60)
+            seconds = event.relative_time % 60
+            time_str = f"{hours:02d}:{minutes:02d}:{seconds:05.2f}"
+    
+            data.append({
+                "date time": time_str,
+                "category": event.object_class,
+                "direction": event.direction,
+                "count": event.count
+            })
+
         df = pd.DataFrame([vars(event) for event in self.crossings])
         df.to_csv(output_path, index=False)
         logger.info(f"Results saved to {output_path}")

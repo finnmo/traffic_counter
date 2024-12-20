@@ -35,27 +35,36 @@ def main():
         7: "truck"
     })
     output_config = config.get('output', {})
-
-    counter = TrafficCounter(
-        model_path=traffic_config.get('path', 'yolov8n.pt'),
-        detection_threshold=traffic_config.get('detection_threshold', 0.45),
-        tracking_threshold=traffic_config.get('tracking_threshold', 0.8),
-        tracker=traffic_config.get('tracker', 'botsort.yaml'),
-        max_path_length=path_config.get('max_length', 30),
-        min_points_for_path=path_config.get('min_points_for_crossing', 3),
-        frame_skip=frame_config.get('frame_skip', 3),
-        roi_padding=frame_config.get('roi_padding', 200),
-        class_mapping=class_mapping
-    )
-
-    # Open video with optimized buffer size
+    
+        # Open video with optimized buffer size
     cap = cv2.VideoCapture(args.video_path)
     if not cap.isOpened():
         logging.error(f"Error opening video file: {args.video_path}")
         return
+    
+     # Get video properties
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    if fps <= 0:
+        logging.warning("Failed to get FPS from video. Defaulting to 30.")
+        fps = 30.0
 
     # Set OpenCV buffer size
     cap.set(cv2.CAP_PROP_BUFFERSIZE, 3)
+
+    counter = TrafficCounter(
+        model_path=config['model']['path'],
+        detection_threshold=config['model']['detection_threshold'],
+        tracking_threshold=config['model']['tracking_threshold'],
+        tracker=config['model']['tracker'],
+        max_path_length=config['path']['max_length'],
+        min_points_for_path=config['path']['min_points_for_crossing'],
+        frame_skip=config['frame_processing']['frame_skip'],
+        roi_padding=config['frame_processing']['roi_padding'],
+        class_mapping=config['classes']['mapping'],
+        fps=fps,
+        start_time=config['time']['start_time']
+    )
+
 
     # Read first frame for line drawing
     ret, frame = cap.read()

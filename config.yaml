@@ -20,8 +20,8 @@ path:
 # Frame Processing Configuration
 # -----------------------------
 frame_processing:
-  frame_skip: 7                      # Process every Nth frame to improve processing speed
-  roi_padding: 150                   # Padding in pixels around the counting line to define the Region of Interest (ROI)
+  frame_skip: 5                      # Process every Nth frame to improve processing speed
+  roi_padding: 200                   # Padding in pixels around the counting line to define the Region of Interest (ROI)
 
 # -----------------------------
 # Class Mapping Configuration
@@ -31,6 +31,12 @@ classes:
     0: "person"                      # YOLO class ID 0 mapped to "person"
     2: "car"                          # YOLO class ID 2 mapped to "car"
     7: "truck"                        # YOLO class ID 7 mapped to "truck"
+
+# -----------------------------
+# Time Configuration
+# -----------------------------
+time:
+  start_time: "08:00"  # Optional. Format: "HH:MM" (24-hour format). Defaults to "00:00" if not specified.
 
 # -----------------------------
 # Output Configuration
