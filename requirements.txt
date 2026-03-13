@@ -1,13 +1,13 @@
-numpy==1.26.3
-pandas==2.2.3
-# lapx must come before ultralytics on Windows — it provides pre-built wheels
-# for the BOT-SORT tracker, replacing 'lap' which requires C++ Build Tools to compile.
+numpy>=1.26
+pandas>=2.2
+# Windows: install lapx BEFORE this file to avoid a C++ compiler requirement.
+#   pip install lapx && pip install -r requirements.txt
 lapx>=0.5.2
 ultralytics==8.3.51
-opencv-python==4.10.0.84
-PyYAML==6.0.2
+opencv-python>=4.10
+PyYAML>=6.0
 
 # CPU-only torch (default). For GPU acceleration install the appropriate build:
 #   CUDA 12.4 (Windows/Linux): pip install torch==2.5.1 --index-url https://download.pytorch.org/whl/cu124
 #   Apple Silicon (MPS):       pip install torch==2.5.1
-torch==2.5.1
+torch>=2.5

@@ -86,13 +86,16 @@ It's recommended to use a virtual environment to manage dependencies and avoid c
 
 ### Install Dependencies
 
-Install the required Python packages using `pip`:
-
+**macOS / Linux:**
 ```bash
 pip install -r requirements.txt
 ```
 
-> **Note:** Ensure that `requirements.txt` contains all necessary dependencies with the correct versions.
+**Windows** — `lapx` must be installed first to provide a pre-built wheel for the BoT-SORT tracker, otherwise pip will try to compile `lap` from source and fail with a "VS environment" error:
+```bash
+pip install lapx
+pip install -r requirements.txt
+```
 
 ### Install the Package
 
