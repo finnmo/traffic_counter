@@ -5,3 +5,6 @@ opencv-python==4.10.0.84
 torch==2.5.1
 PyYAML==6.0.2
 pydantic==2.10.4 
+mss 
+pillow 
+pygetwindow 

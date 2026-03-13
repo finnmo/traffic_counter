@@ -23,7 +23,9 @@ A traffic counting application using YOLO and OpenCV to detect and track objects
 
 ## Features
 
-- **Object Detection and Tracking:** Utilizes YOLOv8 and BoT-SORT for robust object detection and tracking.
+- **Object Detection and Tracking:** Utilizes YOLOv11 and BoT-SORT for robust object detection and tracking.
+- **Multiple Input Sources:** Video files, webcam, RTSP/RTSPS live streams, and screen capture.
+- **Live RTSP Streaming:** Background frame reader ensures the main loop always processes the latest frame with no buffer lag. Auto-reconnects on stream loss.
 - **Configurable Region of Interest (ROI):** Focuses detection within a specified area around the counting line to optimize performance.
 - **Counting Mechanism:** Accurately counts inbound and outbound traffic for defined object classes.
 - **Performance Monitoring:** Displays real-time FPS and processing progress.
@@ -130,7 +132,7 @@ Before running the application, configure its settings via the `config.yaml` fil
    # Model Configuration
    # -----------------------------
    model:
-     path: "yolov11n.pt"                 # Path to the YOLO model weights file
+     path: "yolo11m.pt"                  # Path to the YOLO model weights file
      detection_threshold: 0.45          # Confidence threshold for object detections (0.0 - 1.0)
      tracking_threshold: 0.8            # IoU threshold for tracking (0.0 - 1.0)
      tracker: "botsort.yaml"            # Tracker configuration file ("bytetrack.yaml" or "botsort.yaml")
@@ -182,7 +184,7 @@ Before running the application, configure its settings via the `config.yaml` fil
 
    > **Tips:**
    >
-   > - **Model Path:** Ensure that the YOLO model weights file (`yolov8n.pt`) is in the specified path or provide the correct path to your model.
+   > - **Model Path:** Ensure that the YOLO model weights file (e.g. `yolo11m.pt`) is in the specified path or provide the correct path to your model.
    > - **Video Paths:** The `video_path` and `csv_path` should be writable locations where you want the output to be saved.
    > - **Logging Level:** Adjust the logging level based on your debugging needs (`DEBUG` for more verbose logs).
 
@@ -194,14 +196,28 @@ You can run the `TrafficCounter` application using either the console script or 
 
 After installation, you can use the `traffic-counter` command directly.
 
+**Video file:**
 ```bash
 traffic-counter ./media/0001.avi --config config.yaml
 ```
 
-> **Explanation:**
->
-> - `./media/0001.avi`: Path to the input video file.
-> - `--config config.yaml`: Specifies the configuration file to use.
+**Webcam:**
+```bash
+traffic-counter 0 --config config.yaml
+```
+
+**RTSP / RTSPS live stream:**
+```bash
+traffic-counter rtsp://192.168.1.100:554/stream --config config.yaml
+traffic-counter rtsps://user:pass@192.168.1.100:554/stream --config config.yaml
+```
+
+> RTSP streams are read in a background thread so processing always uses the latest frame rather than a buffered one. The stream auto-reconnects if the connection is lost. Output is saved to `rtsp_output.mp4` by default (override with `video_path` in `config.yaml`).
+
+**Screen capture:**
+```bash
+traffic-counter screen --monitor 1 --config config.yaml
+```
 
 #### Option 2: Using Python Directly
 

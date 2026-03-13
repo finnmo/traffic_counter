@@ -118,6 +118,12 @@ dmypy.json
 *.sublime-project
 *.sublime-workspace
 
+# Claude Code local settings (may contain credentials)
+.claude/
+
+# Log files (may contain IPs / debug info)
+*.log
+
 # macOS specific
 .DS_Store
 
