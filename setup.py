@@ -20,5 +20,12 @@ setup(
         'Operating System :: OS Independent',
     ],
     python_requires='>=3.7',
-    install_requires='pygetwindow>=0.0.9'
+    install_requires=[
+        'numpy>=1.26',
+        'pandas>=2.2',
+        'ultralytics>=8.3',
+        'opencv-python>=4.10',
+        'PyYAML>=6.0',
+        'torch>=2.5',
+    ],
 )
