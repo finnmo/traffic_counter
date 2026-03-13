@@ -91,11 +91,18 @@ It's recommended to use a virtual environment to manage dependencies and avoid c
 pip install -r requirements.txt
 ```
 
-**Windows** — `lapx` must be installed first to provide a pre-built wheel for the BoT-SORT tracker, otherwise pip will try to compile `lap` from source and fail with a "VS environment" error:
+**Windows** — use `--only-binary :all:` to force pip to use pre-built wheels only and never attempt C++ compilation (which requires Visual Studio Build Tools):
 ```bash
 pip install lapx
-pip install -r requirements.txt
+pip install --only-binary :all: -r requirements.txt
 ```
+
+> If you want GPU (CUDA) support on Windows, install torch separately first since the CUDA wheel must come from the PyTorch index:
+> ```bash
+> pip install torch==2.5.1 --index-url https://download.pytorch.org/whl/cu124
+> pip install lapx
+> pip install --only-binary :all: -r requirements.txt
+> ```
 
 ### Install the Package
 
