@@ -23,6 +23,7 @@ setup(
     install_requires=[
         'numpy>=1.26',
         'pandas>=2.2',
+        'lapx>=0.5.2',      # pre-built wheels for BOT-SORT tracker (avoids C++ Build Tools on Windows)
         'ultralytics>=8.3',
         'opencv-python>=4.10',
         'PyYAML>=6.0',
