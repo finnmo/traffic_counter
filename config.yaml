@@ -4,10 +4,10 @@
 # Model Configuration
 # -----------------------------
 model:
-  path: "yolo11m.pt"                 # Path to the YOLO model weights file
-  detection_threshold: 0.3          # Confidence threshold for object detections (0.0 - 1.0)
+  path: "yolo11n.pt"                 # nano=fastest, small=balanced, medium=accurate  (n < s < m)
+  detection_threshold: 0.3           # Confidence threshold for object detections (0.0 - 1.0)
   tracking_threshold: 0.8            # IoU threshold for tracking (0.0 - 1.0)
-  tracker: "botsort.yaml"            # Tracker configuration file ("bytetrack.yaml" or "botsort.yaml")
+  tracker: "bytetrack.yaml"          # bytetrack=faster, botsort=more accurate (botsort runs ReID)
 
 # -----------------------------
 # Path and Crossing Configuration
@@ -20,7 +20,7 @@ path:
 # Frame Processing Configuration
 # -----------------------------
 frame_processing:
-  frame_skip: 7                      # Process every Nth frame to improve processing speed
+  frame_skip: 3                      # Process every Nth frame — increase to 5-10 on slow/CPU-only hardware
   roi_padding: 100                   # Padding in pixels around the counting line to define the Region of Interest (ROI)
 
 # -----------------------------
@@ -30,7 +30,7 @@ classes:
   mapping:
     0: "person"                      # YOLO class ID 0 mapped to "person"
     2: "car"                         # YOLO class ID 2 mapped to "car"
-    #7: "truck"                       # YOLO class ID 7 mapped to "truck"
+    #7: "truck"                      # YOLO class ID 7 mapped to "truck"
 
 # -----------------------------
 # Time Configuration
@@ -42,14 +42,14 @@ time:
 # Output Configuration
 # -----------------------------
 output:
-  save_csv: false                     # Whether to save the crossing events to a CSV file
+  save_csv: false                    # Whether to save the crossing events to a CSV file
   csv_path: "crossings.csv"          # Path to save the CSV file with crossing events
-  save_video: false                   # Whether to save the output video with annotations
+  save_video: false                  # Whether to save the output video with annotations
   video_path: "output.mp4"           # Path to save the annotated output video
 
 # -----------------------------
 # Logging Configuration
 # -----------------------------
 logging:
-  level: "INFO"                       # Logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL
-  file: "traffic_counter.log"         # Path to save the log file
+  level: "INFO"                      # Logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  file: "traffic_counter.log"        # Path to save the log file
