@@ -29,7 +29,7 @@ frame_processing:
 classes:
   mapping:
     0: "person"                      # YOLO class ID 0 mapped to "person"
-    #2: "car"                         # YOLO class ID 2 mapped to "car"
+    2: "car"                         # YOLO class ID 2 mapped to "car"
     #7: "truck"                       # YOLO class ID 7 mapped to "truck"
 
 # -----------------------------
@@ -42,9 +42,9 @@ time:
 # Output Configuration
 # -----------------------------
 output:
-  save_csv: true                     # Whether to save the crossing events to a CSV file
+  save_csv: false                     # Whether to save the crossing events to a CSV file
   csv_path: "crossings.csv"          # Path to save the CSV file with crossing events
-  save_video: true                   # Whether to save the output video with annotations
+  save_video: false                   # Whether to save the output video with annotations
   video_path: "output.mp4"           # Path to save the annotated output video
 
 # -----------------------------
